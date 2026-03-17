@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>激ムズじゃないAI</title>
+    <!-- AIのライブラリを読み込む（これだけでPythonいらず！） -->
+    <script src="https://cdn.jsdelivr.net"></script>
+</head>
+<body>
+    <h1>AIが数値を「学習」する様子</h1>
+    <p>「2倍する」というルールをAIに自習させます。</p>
+    <button onclick="learn()">学習開始！</button>
+    <div id="output"></div>
+
+    <script>
+        async function learn() {
+            const out = document.getElementById('output');
+            
+            // 1. 脳（モデル）を作る
+            const model = tf.sequential();
+            model.add(tf.layers.dense({units: 1, inputShape: [1]})); // ニューロン1個
+
+            // 2. 学習のルールを決める（誤差をどう直すか）
+            model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
+
+            // 3. 練習問題（入力と正解）
+            const xs = tf.tensor2d([1, 2, 3, 4], [4, 1]); // 入力
+            const ys = tf.tensor2d([2, 4, 6, 8], [4, 1]); // 正解（2倍になってる）
+
+            out.innerHTML = "学習中...<br>";
+
+            // 4. 学習実行（500回繰り返してweightを自分で調整させる）
+            await model.fit(xs, ys, {epochs: 500});
+
+            // 5. 予測してみる（未知の数字「10」を入れる）
+            const result = model.predict(tf.tensor2d([10], [1, 1]));
+            const val = result.dataSync()[0];
+
+            out.innerHTML += `学習完了！<br>入力が「10」のとき、AIの予測は... <b>${val.toFixed(2)}</b>`;
+        }
+    </script>
+</body>
+</html>

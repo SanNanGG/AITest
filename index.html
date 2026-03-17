@@ -1,50 +1,58 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI学習テスト</title>
-    <!-- TensorFlow.js（AIのライブラリ）を読み込む -->
+    <title>AI学習テスト（入力あり）</title>
     <script src="https://cdn.jsdelivr.net"></script>
 </head>
-<body>
+<body style="font-family: sans-serif; padding: 20px;">
     <h1>AI数値学習シミュレーター</h1>
-    <p>「入力した数を2倍にする」というルールを、AIに自習させます。</p>
+    
+    <p>1. まずはAIに「2倍の法則」を学習させます。</p>
     <button id="startBtn" onclick="learn()">学習開始（500回特訓）</button>
-    <div id="output" style="margin-top:20px; white-space:pre-line; font-family:monospace;"></div>
+    <span id="status">未学習</span>
+
+    <hr>
+
+    <p>2. 学習が終わったら、好きな数字を入れてテスト！</p>
+    <input type="number" id="userNumber" value="10" disabled>
+    <button id="predictBtn" onclick="predict()" disabled>AIに予測させる</button>
+
+    <h2 id="result"></h2>
 
     <script>
+        let trainedModel; // 学習済みの脳を保存する変数
+
         async function learn() {
-            const out = document.getElementById('output');
-            const btn = document.getElementById('startBtn');
-            btn.disabled = true;
-            out.innerText = "学習中...（AIが重みを調整しています）\n";
+            const status = document.getElementById('status');
+            const startBtn = document.getElementById('startBtn');
+            status.innerText = "学習中...";
+            startBtn.disabled = true;
 
-            // 1. 脳（モデル）の構造を作る
+            // 脳（モデル）の作成
             const model = tf.sequential();
-            // ニューロン1個だけの超シンプルな脳
             model.add(tf.layers.dense({units: 1, inputShape: [1]}));
-
-            // 2. 学習のルール（最適化手法）を決める
             model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
 
-            // 3. 練習問題（入力x と 正解y）
-            // 1のとき2、2のとき4、3のとき6、4のとき8...（2倍の法則）
+            // 練習問題（1→2, 2→4, 3→6, 4→8）
             const xs = tf.tensor2d([1, 2, 3, 4], [4, 1]);
             const ys = tf.tensor2d([2, 4, 6, 8], [4, 1]);
 
-            // 4. 学習（500回繰り返してweightを自動調整）
+            // 学習実行
             await model.fit(xs, ys, {epochs: 500});
 
-            // 5. 予測してみる（教えたことのない「10」を入れてみる）
-            const inputVal = 10;
-            const prediction = model.predict(tf.tensor2d([inputVal], [1, 1]));
-            const result = prediction.dataSync()[0];
+            trainedModel = model; // 脳を保存
+            status.innerText = "学習完了！";
+            document.getElementById('userNumber').disabled = false;
+            document.getElementById('predictBtn').disabled = false;
+        }
 
-            // 6. 結果表示
-            out.innerText += `\n【学習完了！】\n`;
-            out.innerText += `問：入力が「${inputVal}」のとき、答えは何？\n`;
-            out.innerText += `答：AIの予測は「${result.toFixed(2)}」です！\n\n`;
-            out.innerText += `（ほぼ20になっていれば、AIが「2倍」という重みを自力で見つけた証拠です）`;
-            btn.disabled = false;
+        function predict() {
+            const num = parseFloat(document.getElementById('userNumber').value);
+            // 保存した脳を使って予測
+            const prediction = trainedModel.predict(tf.tensor2d([num], [1, 1]));
+            const resultVal = prediction.dataSync()[0];
+
+            document.getElementById('result').innerText = `AIの予測：${resultVal.toFixed(2)}`;
         }
     </script>
 </body>

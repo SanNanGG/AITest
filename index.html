@@ -2,8 +2,8 @@
 <html>
 <head>
     <title>AI学習テスト</title>
-    <!-- ライブラリ読み込み -->
-    <script src="https://cdn.jsdelivr.net"></script>
+    <!-- 読み込み元をGoogle公式の安定版に変更 -->
+    <script src="https://ajax.googleapis.com"></script>
 </head>
 <body style="font-family: sans-serif; padding: 20px;">
     <h1>AI数値学習シミュレーター</h1>
@@ -21,29 +21,36 @@
     <h2 id="result"></h2>
 
     <script>
+        // TensorFlow.jsが正しく読み込まれたかチェック
+        window.onload = function() {
+            if (typeof tf === 'undefined') {
+                document.getElementById('status').innerText = "ライブラリ読み込み失敗。ネット接続を確認してください。";
+            } else {
+                document.getElementById('status').innerText = "準備OK！学習ボタンを押せます。";
+            }
+        };
+
         let trainedModel = null;
 
         async function learn() {
             try {
                 const status = document.getElementById('status');
-                status.innerText = "学習中... (約2秒)";
+                status.innerText = "学習中... (約1秒)";
 
-                // 脳の作成
                 const model = tf.sequential();
                 model.add(tf.layers.dense({units: 1, inputShape: [1]}));
                 model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
 
-                // 練習問題 (1→2, 2→4, 3→6, 4→8)
                 const xs = tf.tensor2d([1, 2, 3, 4], [4, 1]);
                 const ys = tf.tensor2d([2, 4, 6, 8], [4, 1]);
 
-                // 学習実行（回数を100回に減らして爆速にしました）
                 await model.fit(xs, ys, {epochs: 100});
 
                 trainedModel = model;
                 status.innerText = "学習完了！";
             } catch (e) {
                 document.getElementById('status').innerText = "エラー発生: " + e.message;
+                console.error(e);
             }
         }
 
@@ -53,11 +60,10 @@
                 return;
             }
             const num = parseFloat(document.getElementById('userNumber').value);
-            // 予測実行
             const prediction = trainedModel.predict(tf.tensor2d([num], [1, 1]));
-            const resultVal = prediction.dataSync()[0];
+            const resultVal = prediction.dataSync();
 
-            document.getElementById('result').innerText = `AIの予測：${resultVal.toFixed(2)}`;
+            document.getElementById('result').innerText = `AIの予測：${resultVal[0].toFixed(2)}`;
         }
     </script>
 </body>

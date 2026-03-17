@@ -1,54 +1,59 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI学習テスト（入力あり）</title>
+    <title>AI学習テスト</title>
+    <!-- ライブラリ読み込み -->
     <script src="https://cdn.jsdelivr.net"></script>
 </head>
 <body style="font-family: sans-serif; padding: 20px;">
     <h1>AI数値学習シミュレーター</h1>
     
-    <p>1. まずはAIに「2倍の法則」を学習させます。</p>
-    <button id="startBtn" onclick="learn()">学習開始（500回特訓）</button>
+    <p>1. AIに「2倍の法則」を学習させます。</p>
+    <button id="startBtn" onclick="learn()">学習開始</button>
     <span id="status">未学習</span>
 
     <hr>
 
-    <p>2. 学習が終わったら、好きな数字を入れてテスト！</p>
-    <input type="number" id="userNumber" value="10" disabled>
-    <button id="predictBtn" onclick="predict()" disabled>AIに予測させる</button>
+    <p>2. 好きな数字を入れてテスト！</p>
+    <input type="number" id="userNumber" value="10">
+    <button id="predictBtn" onclick="predict()">AIに予測させる</button>
 
     <h2 id="result"></h2>
 
     <script>
-        let trainedModel; // 学習済みの脳を保存する変数
+        let trainedModel = null;
 
         async function learn() {
-            const status = document.getElementById('status');
-            const startBtn = document.getElementById('startBtn');
-            status.innerText = "学習中...";
-            startBtn.disabled = true;
+            try {
+                const status = document.getElementById('status');
+                status.innerText = "学習中... (約2秒)";
 
-            // 脳（モデル）の作成
-            const model = tf.sequential();
-            model.add(tf.layers.dense({units: 1, inputShape: [1]}));
-            model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
+                // 脳の作成
+                const model = tf.sequential();
+                model.add(tf.layers.dense({units: 1, inputShape: [1]}));
+                model.compile({loss: 'meanSquaredError', optimizer: 'sgd'});
 
-            // 練習問題（1→2, 2→4, 3→6, 4→8）
-            const xs = tf.tensor2d([1, 2, 3, 4], [4, 1]);
-            const ys = tf.tensor2d([2, 4, 6, 8], [4, 1]);
+                // 練習問題 (1→2, 2→4, 3→6, 4→8)
+                const xs = tf.tensor2d([1, 2, 3, 4], [4, 1]);
+                const ys = tf.tensor2d([2, 4, 6, 8], [4, 1]);
 
-            // 学習実行
-            await model.fit(xs, ys, {epochs: 500});
+                // 学習実行（回数を100回に減らして爆速にしました）
+                await model.fit(xs, ys, {epochs: 100});
 
-            trainedModel = model; // 脳を保存
-            status.innerText = "学習完了！";
-            document.getElementById('userNumber').disabled = false;
-            document.getElementById('predictBtn').disabled = false;
+                trainedModel = model;
+                status.innerText = "学習完了！";
+            } catch (e) {
+                document.getElementById('status').innerText = "エラー発生: " + e.message;
+            }
         }
 
         function predict() {
+            if (!trainedModel) {
+                alert("先に学習ボタンを押してね！");
+                return;
+            }
             const num = parseFloat(document.getElementById('userNumber').value);
-            // 保存した脳を使って予測
+            // 予測実行
             const prediction = trainedModel.predict(tf.tensor2d([num], [1, 1]));
             const resultVal = prediction.dataSync()[0];
 
